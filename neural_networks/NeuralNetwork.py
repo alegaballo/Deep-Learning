@@ -109,6 +109,7 @@ class NeuralNetwork(object):
         # delete last column
         # delta_e_w_hidden = delta_e_w_hidden[:,0:delta_e_w_hidden.shape[1]-1]
         delta_e_w_hidden = np.delete(delta_e_w_hidden, -1, 1)
+        
         # update output weights
         self.W_hidden_to_output -= self.learning_rate * delta_e_w_output
         # update input weights
