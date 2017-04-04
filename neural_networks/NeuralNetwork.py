@@ -39,7 +39,9 @@ class NeuralNetwork(object):
         input_range = 1.0 / self.input ** (1/2)
         self.W_input_to_hidden = np.random.normal(loc = 0, scale = input_range, size =(self.input, self.hidden-1))
         self.W_hidden_to_output = np.random.uniform(size = (self.hidden, self.output)) / np.sqrt(self.hidden)
-       
+        
+        # set up array containing the error
+        self.errors = np.ones(self.output)
         
     def weights_initialisation(self,wi,wo):
         self.W_input_to_hidden=wi # weights between input and hidden layers
@@ -50,7 +52,7 @@ class NeuralNetwork(object):
         
     #========================Begin implementation section 1============================================="    
     def sigmoid(x):
-        return 1 / (1 + math.exp(-x))
+        return 1.0 / (1.0 + math.exp(-x))
     
     def feedForward(self, inputs):
         v_sigmoid = np.vectorize(sigmoid)
@@ -92,8 +94,8 @@ class NeuralNetwork(object):
     def backPropagate(self, targets):
         
         # calculate error terms for output
-        final_error_terms = self.o_output - targets
-        delta_e_u_output = final_error_terms * self.o_output * (1 - self.o_output)
+        self.errors = self.o_output - targets
+        delta_e_u_output = self.errors * self.o_output * (1 - self.o_output)
         delta_e_u_horizontal = np.matrix(delta_e_u_output)
         o_hidden_vertical = np.matrix(self.o_hidden).T
         
@@ -105,11 +107,14 @@ class NeuralNetwork(object):
         o_input_vertical = np.matrix(self.a_input).T
         delta_e_w_hidden = np.dot(o_input_vertical, delta_e_u_horizontal)
         # delete last column
-        delta_e_w_hidden = delta_e_w_hidden[:,0:delta_e_w_hidden.shape[1]-1]
+        # delta_e_w_hidden = delta_e_w_hidden[:,0:delta_e_w_hidden.shape[1]-1]
+        delta_e_w_hidden = np.delete(delta_e_w_hidden, -1, 1)
         # update output weights
         self.W_hidden_to_output -= self.learning_rate * delta_e_w_output
         # update input weights
         self.W_input_to_hidden -= self.learning_rate * delta_e_w_hidden
+        
+        return np.square(self.errors).sum()/2
         
      #========================End implementation section 2 =================================================="   
 
@@ -125,8 +130,8 @@ class NeuralNetwork(object):
             np.random.shuffle(data)
             inputs  = [entry[0] for entry in data ]
             targets = [ entry[1] for entry in data ]
-            
             error=0.0 
+            
             for i in range(len(inputs)):
                 Input = inputs[i]
                 Target = targets[i]
