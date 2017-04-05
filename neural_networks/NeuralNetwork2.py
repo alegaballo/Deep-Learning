@@ -5,9 +5,9 @@ from utils import *
 from transfer_functions import * 
 
 
-class NeuralNetwork(object):
+class NeuralNetwork2(object):
     
-    def __init__(self, input_layer_size, hidden_layer_size, output_layer_size, iterations=50, learning_rate = 0.1, transfer='sigmoid'):
+    def __init__(self, input_layer_size, hidden_layer1_size, hidden_layer2_size, output_layer_size, iterations=50, learning_rate = 0.1, transfer='sigmoid'):
         """
         input: number of input neurons
         hidden: number of hidden neurons
@@ -23,22 +23,26 @@ class NeuralNetwork(object):
         
         # initialize arrays
         self.input = input_layer_size+1  # +1 for the bias node in the input Layer
-        self.hidden = hidden_layer_size+1 #+1 for the bias node in the hidden layer 
+        self.hidden1 = hidden_layer1_size+1 #+1 for the bias node in the hidden layer 
+        self.hidden2 = hidden_layer2_size+1
         self.output = output_layer_size
 
         # set up array of 1s for activations
         self.a_input = np.ones(self.input)
-        self.a_hidden = np.ones(self.hidden)
+        self.a_hidden1 = np.ones(self.hidden1)
+        self.a_hidden2 = np.ones(self.hidden2)
         self.a_out = np.ones(self.output)
         
         # set up array of 1s for outputs
-        self.o_hidden = np.ones(self.hidden)
+        self.o_hidden1 = np.ones(self.hidden1)
+        self.o_hidden2 = np.ones(self.hidden2)
         self.o_out = np.ones(self.output)
         
         #create randomized weights Yann Lecun method in 1988's paper ( Default values)
         input_range = 1.0 / self.input ** (1/2)
-        self.W_input_to_hidden = np.random.normal(loc = 0, scale = input_range, size =(self.input, self.hidden-1))
-        self.W_hidden_to_output = np.random.uniform(size = (self.hidden, self.output)) / np.sqrt(self.hidden)
+        self.W_input_to_hidden = np.random.normal(loc = 0, scale = input_range, size =(self.input, self.hidden1-1))
+        self.W_hidden_to_hidden = np.random.uniform(size = (self.hidden1, self.hidden2)) / np.sqrt(self.hidden1)
+        self.W_hidden_to_output = np.random.uniform(size = (self.hidden2, self.output)) / np.sqrt(self.hidden2)
         
         # set up array containing the error
         self.errors = np.ones(self.output)
@@ -49,8 +53,9 @@ class NeuralNetwork(object):
             self.transfer_function = tanh
             self.dtransfer_function = dtanh
         
-    def weights_initialisation(self,wi,wo):
+    def weights_initialisation(self,wi,wh,wo):
         self.W_input_to_hidden=wi # weights between input and hidden layers
+        self.W_hidden_to_hidden=wh
         self.W_hidden_to_output=wo # weights between hidden and output layers
    
 
@@ -61,10 +66,16 @@ class NeuralNetwork(object):
     def feedForward(self, inputs):
         self.a_input = np.append(inputs, 1)
         a_hidden_without_bias = np.dot(self.a_input, self.W_input_to_hidden)
-        self.a_hidden = np.append(a_hidden_without_bias, 0)
-        self.o_hidden = self.transfer_function(self.a_hidden)
-        self.o_hidden[-1] = 1
-        self.a_output = np.dot(self.o_hidden, self.W_hidden_to_output)
+        self.a_hidden1 = np.append(a_hidden_without_bias, 0)
+        self.o_hidden1 = self.transfer_function(self.a_hidden1)
+        self.o_hidden1[-1] = 1
+        
+        self.a_hidden2 = np.dot(self.o_hidden1, self.W_hidden_to_hidden)
+        self.a_hidden2 = np.append(self.a_hidden2, 0)
+        self.o_hidden2 = self.transfer_function(self.a_hidden2)
+        self.o_hidden2[-1] = 1
+        
+        self.a_output = np.dot(self.o_hidden2, self.W_hidden_to_output)
         self.o_output = self.transfer_function(self.a_output)
         return self.o_output
 
@@ -82,20 +93,36 @@ class NeuralNetwork(object):
         self.errors = self.o_output - targets
         delta_e_u_output = self.errors * self.dtransfer_function(self.a_out)
         delta_e_u_horizontal = np.matrix(delta_e_u_output)
-        o_hidden_vertical = np.matrix(self.o_hidden).T
+        o_hidden_vertical = np.matrix(self.o_hidden2).T
         
         delta_e_w_output = np.dot(o_hidden_vertical, delta_e_u_horizontal)
 
-        # calculate error terms for hidden
-        delta_e_u_hidden = np.dot(self.W_hidden_to_output, delta_e_u_output) * self.dtransfer_function(self.a_hidden)
+        
+        # calculate error terms for hidden 2
+        delta_e_u_hidden2 = np.dot(self.W_hidden_to_output, delta_e_u_output) * self.dtransfer_function(self.a_hidden2)
+        delta_e_u_horizontal2 = np.matrix(delta_e_u_hidden2)
+        o_hidden_vertical = np.matrix(self.a_hidden1).T
+        delta_e_w_hidden2 = np.dot(o_hidden_vertical, delta_e_u_horizontal2)
+        # delete last column
+        # delta_e_w_hidden = delta_e_w_hidden[:,0:delta_e_w_hidden.shape[1]-1]
+        delta_e_w_hidden2 = np.delete(delta_e_w_hidden2, -1, 1)
+        
+        
+        
+        # calculate error terms for hidden 1
+        delta_e_u_hidden = np.dot(self.W_hidden_to_hidden, delta_e_u_hidden2) * self.dtransfer_function(self.a_hidden1)
         delta_e_u_horizontal = np.matrix(delta_e_u_hidden)
         o_input_vertical = np.matrix(self.a_input).T
         delta_e_w_hidden = np.dot(o_input_vertical, delta_e_u_horizontal)
         # delete last column
         # delta_e_w_hidden = delta_e_w_hidden[:,0:delta_e_w_hidden.shape[1]-1]
         delta_e_w_hidden = np.delete(delta_e_w_hidden, -1, 1)
-        # update output weights
+        
+        
+        # update hidden_output weights
         self.W_hidden_to_output -= self.learning_rate * delta_e_w_output
+        # update hidden_hidden weights
+        self.W_hidden_to_hidden -= self.learning_rate * delta_e_w_hidden2
         # update input weights
         self.W_input_to_hidden -= self.learning_rate * delta_e_w_hidden
         
