@@ -80,14 +80,14 @@ class NeuralNetwork(object):
         
         # calculate error terms for output
         self.errors = self.o_output - targets
-        delta_e_u_output = self.errors * self.dtransfer_function(self.a_out)
+        delta_e_u_output = self.errors * self.dtransfer_function(self.o_output)
         delta_e_u_horizontal = np.matrix(delta_e_u_output)
         o_hidden_vertical = np.matrix(self.o_hidden).T
         
         delta_e_w_output = np.dot(o_hidden_vertical, delta_e_u_horizontal)
 
         # calculate error terms for hidden
-        delta_e_u_hidden = np.dot(self.W_hidden_to_output, delta_e_u_output) * self.dtransfer_function(self.a_hidden)
+        delta_e_u_hidden = np.dot(self.W_hidden_to_output, delta_e_u_output) * self.dtransfer_function(self.o_hidden)
         delta_e_u_horizontal = np.matrix(delta_e_u_hidden)
         o_input_vertical = np.matrix(self.a_input).T
         delta_e_w_hidden = np.dot(o_input_vertical, delta_e_u_horizontal)
@@ -110,7 +110,7 @@ class NeuralNetwork(object):
         start_time = time.time()
         errors=[]
         Training_accuracies=[]
-        Test_accuracies=[]
+        Val_accuracies=[]
       
         for it in range(self.iterations):
             np.random.shuffle(data)
@@ -131,6 +131,7 @@ class NeuralNetwork(object):
             
            
             print("Iteration: %2d/%2d[==============] -Error: %5.10f  -Training_Accuracy:  %2.2f  -time: %2.2f " %(it+1,self.iterations, error, (self.predict(data)/len(data))*100, time.time() - start_time))
+            print('Validation accuracy', self.predict(validation_data)/len(validation_data)*100)
             # you can add test_accuracy and validation accuracy for visualisation 
             
         plot_curve(range(1,self.iterations+1),errors, "Error")

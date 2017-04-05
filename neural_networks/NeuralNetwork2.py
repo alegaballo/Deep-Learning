@@ -91,7 +91,7 @@ class NeuralNetwork2(object):
         
         # calculate error terms for output
         self.errors = self.o_output - targets
-        delta_e_u_output = self.errors * self.dtransfer_function(self.a_out)
+        delta_e_u_output = self.errors * self.dtransfer_function(self.o_output)
         delta_e_u_horizontal = np.matrix(delta_e_u_output)
         o_hidden_vertical = np.matrix(self.o_hidden2).T
         
@@ -99,7 +99,7 @@ class NeuralNetwork2(object):
 
         
         # calculate error terms for hidden 2
-        delta_e_u_hidden2 = np.dot(self.W_hidden_to_output, delta_e_u_output) * self.dtransfer_function(self.a_hidden2)
+        delta_e_u_hidden2 = np.dot(self.W_hidden_to_output, delta_e_u_output) * self.dtransfer_function(self.o_hidden2)
         delta_e_u_horizontal2 = np.matrix(delta_e_u_hidden2)
         o_hidden_vertical = np.matrix(self.a_hidden1).T
         delta_e_w_hidden2 = np.dot(o_hidden_vertical, delta_e_u_horizontal2)
@@ -110,7 +110,7 @@ class NeuralNetwork2(object):
         
         
         # calculate error terms for hidden 1
-        delta_e_u_hidden = np.dot(self.W_hidden_to_hidden, delta_e_u_hidden2) * self.dtransfer_function(self.a_hidden1)
+        delta_e_u_hidden = np.dot(self.W_hidden_to_hidden, delta_e_u_hidden2) * self.dtransfer_function(self.o_hidden1)
         delta_e_u_horizontal = np.matrix(delta_e_u_hidden)
         o_input_vertical = np.matrix(self.a_input).T
         delta_e_w_hidden = np.dot(o_input_vertical, delta_e_u_horizontal)
@@ -137,7 +137,7 @@ class NeuralNetwork2(object):
         start_time = time.time()
         errors=[]
         Training_accuracies=[]
-        Test_accuracies=[]
+        Val_accuracies=[]
       
         for it in range(self.iterations):
             np.random.shuffle(data)
