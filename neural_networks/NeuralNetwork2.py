@@ -41,7 +41,7 @@ class NeuralNetwork2(object):
         #create randomized weights Yann Lecun method in 1988's paper ( Default values)
         input_range = 1.0 / self.input ** (1/2)
         self.W_input_to_hidden = np.random.normal(loc = 0, scale = input_range, size =(self.input, self.hidden1-1))
-        self.W_hidden_to_hidden = np.random.uniform(size = (self.hidden1, self.hidden2)) / np.sqrt(self.hidden1)
+        self.W_hidden_to_hidden = np.random.uniform(size = (self.hidden1, self.hidden2-1)) / np.sqrt(self.hidden1)
         self.W_hidden_to_output = np.random.uniform(size = (self.hidden2, self.output)) / np.sqrt(self.hidden2)
         
         # set up array containing the error
@@ -94,30 +94,22 @@ class NeuralNetwork2(object):
         delta_e_u_output = self.errors * self.dtransfer_function(self.o_output)
         delta_e_u_horizontal = np.matrix(delta_e_u_output)
         o_hidden_vertical = np.matrix(self.o_hidden2).T
-        
         delta_e_w_output = np.dot(o_hidden_vertical, delta_e_u_horizontal)
-
         
         # calculate error terms for hidden 2
         delta_e_u_hidden2 = np.dot(self.W_hidden_to_output, delta_e_u_output) * self.dtransfer_function(self.o_hidden2)
-        delta_e_u_horizontal2 = np.matrix(delta_e_u_hidden2)
-        o_hidden_vertical = np.matrix(self.a_hidden1).T
-        delta_e_w_hidden2 = np.dot(o_hidden_vertical, delta_e_u_horizontal2)
         # delete last column
-        # delta_e_w_hidden = delta_e_w_hidden[:,0:delta_e_w_hidden.shape[1]-1]
-        delta_e_w_hidden2 = np.delete(delta_e_w_hidden2, -1, 1)
-        
-        
+        delta_e_u_hidden2 = delta_e_u_hidden2[:-1]
+        delta_e_u_horizontal2 = np.matrix(delta_e_u_hidden2)
+        o_hidden_vertical2 = np.matrix(self.o_hidden1).T
+        delta_e_w_hidden2 = np.dot(o_hidden_vertical2, delta_e_u_horizontal2)
         
         # calculate error terms for hidden 1
         delta_e_u_hidden = np.dot(self.W_hidden_to_hidden, delta_e_u_hidden2) * self.dtransfer_function(self.o_hidden1)
+        delta_e_u_hidden = delta_e_u_hidden[:-1]
         delta_e_u_horizontal = np.matrix(delta_e_u_hidden)
         o_input_vertical = np.matrix(self.a_input).T
         delta_e_w_hidden = np.dot(o_input_vertical, delta_e_u_horizontal)
-        # delete last column
-        # delta_e_w_hidden = delta_e_w_hidden[:,0:delta_e_w_hidden.shape[1]-1]
-        delta_e_w_hidden = np.delete(delta_e_w_hidden, -1, 1)
-        
         
         # update hidden_output weights
         self.W_hidden_to_output -= self.learning_rate * delta_e_w_output
