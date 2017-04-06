@@ -10,7 +10,7 @@ def load_data():
 
     # Load the MNIST dataset
     with gzip.open('Data/mnist.pkl.gz', 'r') as f:
-        train_set, valid_set, test_set = pickle.load(f)
+        train_set, valid_set, test_set = pickle.load(f,encoding="iso-8859-1")
         learn_data       = [(train_set[0][i], [1 if j == train_set[1][i] else 0 for j in range(10)]) \
                     for i in np.arange(len(train_set[0]))]
         test_data        = [(test_set[0][i], [1 if j == test_set[1][i] else 0 for j in range(10)]) \
